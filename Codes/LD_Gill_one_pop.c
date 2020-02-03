@@ -39,9 +39,9 @@ int main(int argc, char **argv){ //Parameters from console: mu, s, C, N0, G_0
   double L=1; //Seq. lenght
   //sscanf(argv[5], "%lf", &L);
   //printf("L=%f\n", L);
-	double Total_T = 200.0; //Total time of simulations 
-	int intervals = 200;
-	int n_pop = 1; //1 Population!!!!!!!!!!!!!!!
+	double Total_T = 800.0; //Total time of simulations 
+	int intervals = 4000;
+	int n_pop = 3; //1 Population!!!!!!!!!!!!!!!
 
 	//For arrays to be printed
 	double *T = malloc(sizeof(double)*(intervals+1));
@@ -61,7 +61,7 @@ int main(int argc, char **argv){ //Parameters from console: mu, s, C, N0, G_0
   	double *K = malloc(sizeof(double)*(L+2)); //Array with labels of error classes
   	double *F = malloc(sizeof(double)*(L+2)); //Array with fitness landscape
   	linspace_R(K,0,L,(int)L+1); //Fill the array K of labels
-  	FILE *out_fitness=fopen("Text_files/One_pop/fitness.txt","w+");
+  	FILE *out_fitness=fopen("../Text_files/One_pop/fitness.txt","w+");
   	set_fitness(y, s, k0, L, F, out_fitness); // fill the array F with the values of fitness
   	fclose(out_fitness);
 
@@ -82,12 +82,12 @@ int main(int argc, char **argv){ //Parameters from console: mu, s, C, N0, G_0
   	//print array of data
   	int rep = 0;
   	char buf[0x100];
-  	snprintf(buf, sizeof(buf), "Text_files/One_pop/K_ensemble_mu%.1e_s%.1e_C%.1e_N0%.1e_L%.0f_G0%.0f_rep%d.txt", mu, s, C, N0, L, k_mean_0, rep); //create name of new output file
+  	snprintf(buf, sizeof(buf), "../Text_files/One_pop/K_ensemble_mu%.1e_s%.1e_C%.1e_N0%.1e_L%.0f_rep%d.txt", mu, s, C, N0, L, rep); //create name of new output file
     int exist = cfileexists(buf);
 
   	while(exist==1){
   		rep++;
-  		snprintf(buf, sizeof(buf), "Text_files/One_pop/K_ensemble_mu%.1e_s%.1e_C%.1e_N0%.1e_L%.0f_G0%.0f_rep%d.txt", mu, s, C, N0, L, k_mean_0, rep); //create name of new output file
+  		snprintf(buf, sizeof(buf), "../Text_files/One_pop/K_ensemble_mu%.1e_s%.1e_C%.1e_N0%.1e_L%.0f_rep%d.txt", mu, s, C, N0, L, rep); //create name of new output file
       exist = cfileexists(buf);
   	}
 
@@ -110,8 +110,8 @@ double evolution_population_i(double Total_T, double L, double k_mean_0, double 
 	int iter = 10000000;
 	double *N = malloc(sizeof(double)*(L+2)); //Arrays with current population
 	double *T_i = malloc(sizeof(double)*(iter+1)); //Arrays with current time
-  	double *K_mean_i = malloc(sizeof(double)*(iter)); //Arrays with current k mean
-  	double *K_div_i = malloc(sizeof(double)*(iter)); //Arrays with current k div
+  double *K_mean_i = malloc(sizeof(double)*(iter)); //Arrays with current k mean
+  double *K_div_i = malloc(sizeof(double)*(iter)); //Arrays with current k div
 
   	for(int i=1; i<=L+1; i++){
   		N[i]=0;
@@ -130,12 +130,12 @@ double evolution_population_i(double Total_T, double L, double k_mean_0, double 
   	// File for freqs
   	int rep2 = 0;
   	char buf2[0x100];
-  	snprintf(buf2, sizeof(buf2), "Text_files/One_pop/One_pop_mu%.1e_s%.1e_C%.1e_N0%.1e_L%.0f_G0%.0f_rep%d.txt", mu, s, C, N0, L, k_mean_0, rep2); //create name of new output file
+  	snprintf(buf2, sizeof(buf2), "../Text_files/One_pop/One_pop_mu%.1e_s%.1e_C%.1e_N0%.1e_L%.0f_rep%d.txt", mu, s, C, N0, L, rep2); //create name of new output file
     int exist2 = cfileexists(buf2);
 
   	while(exist2==1){
   		rep2++;
-  		snprintf(buf2, sizeof(buf2), "Text_files/One_pop/One_pop_mu%.1e_s%.1e_C%.1e_N0%.1e_L%.0f_G0%.0f_rep%d.txt", mu, s, C, N0, L, k_mean_0, rep2); //create name of new output file
+  		snprintf(buf2, sizeof(buf2), "../Text_files/One_pop/One_pop_mu%.1e_s%.1e_C%.1e_N0%.1e_L%.0f_rep%d.txt", mu, s, C, N0, L, rep2); //create name of new output file
       exist2 = cfileexists(buf2);
   	}
 
@@ -170,9 +170,13 @@ double evolution_population_i(double Total_T, double L, double k_mean_0, double 
   		}
   		i++;
  	}
+  free(N);
+  free(T_i);
+  free(K_mean_i);
+  free(K_div_i);
  	fclose(out_freqs);
  	// return the last time of the evolution of this population
-  	return T_i[i];
+  return T_i[i];
 }
 double initial_population(double mu, double s, double L, double k_mean_0, double N0, double *N){
     
@@ -242,7 +246,7 @@ double step_gillespie(double mu, double L, double C, double *N, double *F, doubl
     return sum_pop + delta_N;
 }
 void set_fitness(double y, double s, double k0, double L, double *F, FILE *out_fitness){
-    F[1] = 0.1;
+    F[1] = 0.01;
     fprintf(out_fitness, "%f\n", F[1]);
     F[2] = F[1] + s;
     fprintf(out_fitness, "%f\n", F[2]);
@@ -322,7 +326,7 @@ void print_frequencies(double *N, double L, double sum_pop, FILE *out_freq){
   
   fprintf(out_freq, ",%f", sum_pop);
   for(int i=1; i<= L+1 ; i++){
-  fprintf(out_freq, ",%f", N[i]/sum_pop);
+    fprintf(out_freq, ",%f", N[i]/sum_pop);
   } 
   fprintf(out_freq, "\n");
 }
