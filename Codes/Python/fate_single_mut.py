@@ -1,64 +1,127 @@
+import sys
+import numpy as np
+import matplotlib.pyplot as plt
+import random
 
+def fate_single_mut(s, n_pop, short_t = False, long_t = True):
 
-def fate_single_mut():
+	m = 500
+	if short_t == True:
+		factor = 0.05
+	else:
+		factor = 4
 
-	import numpy as np
-	import matplotlib.pyplot as plt
-	import random
-
+	T_total = (1/s)*factor
+	T_avg = np.linspace(0, T_total, m)
+	Mut_avg = np.zeros(shape = (m))
+	n_pop = n_pop
 	N=1e5
-	WT = []
-	Mut = []
-	T = []
-	s = 0.1
-	mu = 0
-	b = 1.0 + s
-	d = 1.0
+	fig, ax = plt.subplots(figsize=(12,8))
+	fig.suptitle(r'Fate of a single mutant ; $\left< n|\mathrm{not\;extinct}\right>$', fontsize = 15)
+	for n in range(n_pop): 
 
-	WT.append(N/2)
-	Mut.append(1)
-	T.append(0)
+		#WT_temp = np.zeros(shape = (1, 1000))
+		WT = np.array([])
+		Mut = np.array([])
+		T = np.array([])
+		s = s
+		mu = 0
+		b = 1.0 + s
+		d = 1.0
 
-	for i in range(100000):
+		WT = np.append(WT,N/2)
+		Mut = np.append(Mut,1)
+		T = np.append(T,0)
 
-		#Ask if the mutant pop. went extint
-		if(Mut[-1]==0):
-			mu=1e-5
-		else:
-			mu=0
+		i = 0
+		while T[i] < T_total*1.1:
 
-		sum_rate = b*Mut[-1] + d*Mut[-1] + mu*WT[-1]
-		#print(sum_rate)
+			#Ask if the mutant pop. went extint
+			if(Mut[-1]==0):
+				mu=1e-5
 
-		#Produce random numbers
-		r1 = random.random()
-		r2 = random.random()
+				WT = np.array([])
+				Mut = np.array([])
+				T = np.array([])
 
-		#sample time of the next event
-		tau = -(1/sum_rate)*np.log(1-r1)
-		T.append(T[-1]+tau)
+				WT = np.append(WT,N/2)
+				Mut = np.append(Mut,1)
+				T = np.append(T,0)
 
-		#what happened?
+				i = 0
+			else:
+				mu=0
 
-		if(0 < r2 <= ((b*Mut[-1])/sum_rate) ):
-			Mut.append(Mut[-1]+1)
-			#print("birth event")
-		elif( ((b*Mut[-1])/sum_rate) < r2 <= ((b*Mut[-1] + d*Mut[-1])/sum_rate)  ):
-			Mut.append(Mut[-1]-1)
-			#print("death event")
-		else:
-			Mut.append(1)
-			#print("mutation event")
+			sum_rate = b*Mut[-1] + d*Mut[-1] + mu*WT[-1]
+			#print(sum_rate)
 
-	plt.figure(figsize=(12,8))
-	plt.plot(T,Mut)
-	plt.plot(T, np.exp(s*np.array(T)))
-	plt.hlines(1/s,0,max(T))
-	plt.vlines((0.577216/s),0.1,1/s)
-	plt.yscale('log')
-	plt.xlabel('t', fontsize = 14)
-	plt.ylabel(r'$\log{N_{\mathrm{mut}}}$', fontsize = 14)
-	plt.title('Fate of a single mutant', fontsize = 15)
-	plt.yticks([1/s], [r"$\frac{1}{s}$"], fontsize=16)
-	plt.xticks([(0.577216/s)], [r"$<\tau_{\mathrm{est}}>$"], fontsize=14)
-	plt.show()
+			#Produce random numbers
+			r1 = random.random()
+			r2 = random.random()
+
+			#sample time of the next event
+			tau = -(1/sum_rate)*np.log(1-r1)
+			T = np.append(T, T[-1]+tau)
+
+			#what happened?
+
+			if(0 < r2 <= ((b*Mut[-1])/sum_rate) ):
+				Mut = np.append(Mut, Mut[-1]+1)
+				#print("birth event")
+			elif( ((b*Mut[-1])/sum_rate) < r2 <= ((b*Mut[-1] + d*Mut[-1])/sum_rate)  ):
+				Mut = np.append(Mut, Mut[-1]-1)
+				#print("death event")
+			else:
+				Mut = np.append(Mut, 1)
+				#print("mutation event")
+
+			i+=1
+
+		k = 0
+		j = 0
+		while (T[j]<=T_total):
+			while (T[j]>=T_avg[k]):
+				Mut_avg[k] += Mut[j]
+				k+=1
+				if k >= m:
+					break
+			j+=1
+
+		ax.plot(T,Mut, 'g', alpha = 0.05)
+	
+	if short_t == True:
+		ax.plot(T_avg[:-1], Mut_avg[:-1]/n_pop, 'g-', ms = 30, label = r'$\left<n\right>$')
+		ax.plot(T_avg, 1+T_avg, 'b--', label = r'$1+t$')
+		ax.plot(T_avg, np.exp(s*T_avg) + (np.exp(s*T_avg)-1)/(s), 'b-', label = r'$e^{st} + \frac{e^{st}-1}{s}$')
+		ax.hlines(1/s,0,max(T))
+		ax.vlines((0.577216/s),0.5,1/s)
+		#ax.set_yscale('log')
+		ax.set_xlim(0,(1/s)*0.02)
+		ax.set_ylim(0.8, (1/s)*0.04)
+		ax.set_xlabel('t', fontsize = 14)
+		ax.set_ylabel(r'$N_{\mathrm{mut}}$', fontsize = 14)
+		ax.set_title(r'$t\ll\frac{1}{s}$', fontsize=16)
+		ax.set_yticks([1/s])
+		ax.set_yticklabels([r"$\frac{1}{s}$"])
+		ax.set_xticks([(0.577216/s)])
+		ax.set_xticklabels([r"$<\tau_{\mathrm{est}}>$"])
+		ax.tick_params(labelsize = 16)
+		ax.legend(fontsize = 16)
+	else:
+		ax.plot(T_avg[:-1], Mut_avg[:-1]/n_pop, 'g-', label = r'$\left<n\right>$')
+		ax.plot(T_avg, np.exp(s*T_avg)/s, 'b--', label = r'$\frac{1}{s}e^{st}$')
+		ax.plot(T_avg, np.exp(s*T_avg) + (np.exp(s*T_avg)-1)/(s), 'b-', label = r'$e^{st} + \frac{e^{st}-1}{s}$')
+		ax.hlines(1/s,0,max(T))
+		ax.vlines((0.577216/s),0.5,1/s)
+		ax.set_yscale('log')
+		ax.set_xlabel('t', fontsize = 14)
+		ax.set_ylabel(r'$\log{N_{\mathrm{mut}}}$', fontsize = 14)
+		ax.set_title(r'$t\gg\frac{1}{s}$', fontsize=16)
+		ax.set_yticks([1/s])
+		ax.set_yticklabels([r"$\frac{1}{s}$"])
+		ax.set_xticks([(0.577216/s)])
+		ax.set_xticklabels([r"$<\tau_{\mathrm{est}}>$"])
+		ax.tick_params(labelsize = 16)
+		ax.legend(fontsize = 16)
+
+	#plt.show()
